@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"time"
 )
 
 func main() {
@@ -31,14 +32,19 @@ func main() {
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	reader := bufio.NewReader(conn)
-	for {
-		msg, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Print("Message Received:", msg)
+	fileName := fmt.Sprintf("received_file_%v", time.Now().UnixNano())
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
 	}
+	defer file.Close()
+
+	_, err = io.Copy(file, conn)
+	if err != nil {
+		fmt.Println("Error saving file:", err)
+		return
+	}
+
+	fmt.Printf("Filed saved: %s\n", file.Name())
 }
